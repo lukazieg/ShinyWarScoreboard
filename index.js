@@ -15,6 +15,31 @@ const {
 const fs = require("fs");
 require("dotenv").config();
 
+const express = require('express');
+const app = express();
+
+// Health check configuration
+const HEALTH_PORT = process.env.HEALTH_PORT || 3000;
+const HEALTH_HOST = process.env.HEALTH_HOST || '127.0.0.1';
+let lastHealthCheck = new Date().toISOString();
+
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', time: new Date().toISOString(), lastHealthCheck });
+});
+
+function healthCheck() {
+  lastHealthCheck = new Date().toISOString();
+  console.log(`[health] ${lastHealthCheck} - status: OK`);
+}
+
+// Log an initial health check immediately, then every 4 minutes
+healthCheck();
+setInterval(healthCheck, 4 * 60 * 1000);
+
+app.listen(HEALTH_PORT, HEALTH_HOST, () => {
+  console.log(`Health endpoint available at http://${HEALTH_HOST}:${HEALTH_PORT}/health`);
+});
+
 let scoreboard = JSON.parse(
   fs.readFileSync("./scoreboard.json", "utf8")
 );
