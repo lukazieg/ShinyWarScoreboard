@@ -322,11 +322,10 @@ function createScoreboardEmbed() {
   const bo = scoreboard.bocchi || 0;
   const total = Math.max(1, ny + bo);
 
-  // Render digits using fullwidth Unicode digits to appear visually larger
+  // Render digits using normal ASCII digits (no Unicode) and sanitize input
   function fullWidth(num) {
-    return String(num).split("").map(d => ({
-      '0': '０', '1': '１', '2': '２', '3': '３', '4': '４', '5': '５', '6': '６', '7': '７', '8': '８', '9': '９', '-': '−'
-    }[d] || d)).join("");
+    // Normalize: remove whitespace and common zero-width characters, and strip any non-digits (except '-')
+    return String(num).replace(/[\s\u200B\uFEFF\u2060]/g, '').replace(/[^\d\-]/g, '');
   }
 
   // Simple wide progress bar (uses block characters)
@@ -339,8 +338,8 @@ function createScoreboardEmbed() {
   const boValue = `**${fullWidth(bo)}**\n${progressBar(bo, 24)}\n(${Math.round((bo / total) * 100)}%)`;
 
   return new EmbedBuilder()
-    .setTitle("🏆 Scoreboard")
-    .setDescription(`**Current Standings**\n\n🔹 **NyanCat** — ${fullWidth(ny)}\n🔸 **Bocchi** — ${fullWidth(bo)}`)
+    .setTitle('🏆 SCOREBOARD')
+    .setDescription(`**Current Standings**\n\n\n\n`)
     .addFields(
       { name: "😼 NyanCat", value: nyValue, inline: true },
       { name: "🥈 Bocchi", value: boValue, inline: true }
