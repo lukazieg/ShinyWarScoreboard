@@ -1,11 +1,19 @@
-const { REST, Routes, SlashCommandBuilder } = require("discord.js");
+const { REST, Routes, SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
 require("dotenv").config();
 
 const commands = [
   new SlashCommandBuilder()
     .setName("add")
-    .setDescription("Add data to the scoreboard")
-    .toJSON()
+    .setDescription("Add points to the scoreboard")
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+    .setDMPermission(false)
+    .toJSON(),
+  new SlashCommandBuilder()
+    .setName("remove")
+    .setDescription("Remove points from the scoreboard")
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+    .setDMPermission(false)
+    .toJSON(),
 ];
 
 const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);

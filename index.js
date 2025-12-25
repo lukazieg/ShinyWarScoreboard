@@ -1,6 +1,7 @@
 const {
   Client,
   GatewayIntentBits,
+  PermissionFlagsBits,
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
@@ -10,6 +11,7 @@ const {
   ButtonBuilder,
   ButtonStyle
 } = require("discord.js");
+
 const fs = require("fs");
 require("dotenv").config();
 
@@ -36,6 +38,10 @@ const pendingSelections = new Map();
 client.on("interactionCreate", async interaction => {
   // Slash command
   if (interaction.isChatInputCommand()) {
+    if (!interaction.member || !interaction.member.permissions || !interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
+      return interaction.reply({ content: "Only server administrators can use this command.", ephemeral: true });
+    }
+
     if (interaction.commandName === "add") {
 
       const teamSelect = new StringSelectMenuBuilder()
@@ -52,6 +58,21 @@ client.on("interactionCreate", async interaction => {
         ephemeral: true
       });
 
+    } else if (interaction.commandName === "remove") {
+      // show a team select for removal
+      const teamSelect = new StringSelectMenuBuilder()
+        .setCustomId("selectTeamRemove")
+        .setPlaceholder("Select a team to remove points from")
+        .addOptions([
+          { label: "NyanCat", value: "nyancat" },
+          { label: "Bocchi", value: "bocchi" }
+        ]);
+
+      await interaction.reply({
+        content: "Choose a team to remove points from:",
+        components: [new ActionRowBuilder().addComponents(teamSelect)],
+        ephemeral: true
+      });
     }
   }
 
@@ -85,6 +106,27 @@ client.on("interactionCreate", async interaction => {
         content: `Selected **${label}** — choose points:`,
         components: [new ActionRowBuilder().addComponents(pointsSelect)]
       });
+
+    } else if (interaction.customId === "selectTeamRemove") {
+      // user chose a team for removal — show a modal to enter points to remove
+      const teamValue = interaction.values[0];
+      const label = teamValue === "nyancat" ? "NyanCat" : "Bocchi";
+
+      const modal = new ModalBuilder()
+        .setCustomId(`modalRemove|${teamValue}`)
+        .setTitle(`Remove points from ${label}`)
+        .addComponents(
+          new ActionRowBuilder().addComponents(
+            new TextInputBuilder()
+              .setCustomId('pointsToRemove')
+              .setLabel('Points to remove')
+              .setStyle(TextInputStyle.Short)
+              .setPlaceholder('Enter a positive integer')
+              .setRequired(true)
+          )
+        );
+
+      await interaction.showModal(modal);
 
     } else if (interaction.customId && interaction.customId.startsWith("selectPoints|")) {
       // Instead of applying immediately, show a flags dialog and allow confirmation
@@ -123,8 +165,6 @@ client.on("interactionCreate", async interaction => {
           new ActionRowBuilder().addComponents(confirmButton, cancelButton)
         ]
       });
-
-      // now using toggle buttons for flags; button handlers moved below
     }
   }
 
@@ -184,6 +224,33 @@ client.on("interactionCreate", async interaction => {
     } else if (interaction.customId && interaction.customId.startsWith("cancelAdd|")) {
       pendingSelections.delete(interaction.user.id);
       return interaction.update({ content: `Canceled pending addition.`, components: [] });
+    }
+  }
+
+  // Modal submit handlers (remove)
+  if (interaction.isModalSubmit()) {
+    if (interaction.customId && interaction.customId.startsWith("modalRemove|")) {
+      const teamValue = interaction.customId.split("|")[1];
+      const label = teamValue === "nyancat" ? "NyanCat" : "Bocchi";
+      const valueStr = (interaction.fields.getTextInputValue('pointsToRemove') || '').trim();
+      const requested = parseInt(valueStr, 10);
+      if (isNaN(requested) || requested <= 0) {
+        return interaction.reply({ content: "Please enter a valid positive integer.", ephemeral: true });
+      }
+      const current = scoreboard[teamValue] || 0;
+      const actualRemoved = Math.min(requested, current);
+      scoreboard[teamValue] = Math.max(0, current - requested);
+      fs.writeFileSync("./scoreboard.json", JSON.stringify(scoreboard, null, 2));
+
+      try {
+        const channel = await client.channels.fetch(process.env.SCOREBOARD_CHANNEL_ID);
+        await updateScoreboardMessage(channel);
+      } catch (err) {
+        console.error("Failed to update scoreboard after removal:", err);
+        return interaction.reply({ content: "Failed to update scoreboard message (see logs).", ephemeral: true });
+      }
+
+      return interaction.reply({ content: `Removed **${actualRemoved}** points from **${label}**. New total: **${scoreboard[teamValue]}**.`, ephemeral: true });
     }
   }
 
