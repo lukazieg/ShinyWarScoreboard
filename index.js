@@ -318,14 +318,35 @@ async function updateScoreboardMessage(channel) {
 }
 
 function createScoreboardEmbed() {
+  const ny = scoreboard.nyancat || 0;
+  const bo = scoreboard.bocchi || 0;
+  const total = Math.max(1, ny + bo);
+
+  // Render digits using fullwidth Unicode digits to appear visually larger
+  function fullWidth(num) {
+    return String(num).split("").map(d => ({
+      '0': '０', '1': '１', '2': '２', '3': '３', '4': '４', '5': '５', '6': '６', '7': '７', '8': '８', '9': '９', '-': '−'
+    }[d] || d)).join("");
+  }
+
+  // Simple wide progress bar (uses block characters)
+  function progressBar(value, len = 20) {
+    const filled = Math.round((value / total) * len);
+    return '█'.repeat(filled) + '░'.repeat(Math.max(0, len - filled));
+  }
+
+  const nyValue = `**${fullWidth(ny)}**\n${progressBar(ny, 24)}\n(${Math.round((ny / total) * 100)}%)`;
+  const boValue = `**${fullWidth(bo)}**\n${progressBar(bo, 24)}\n(${Math.round((bo / total) * 100)}%)`;
+
   return new EmbedBuilder()
     .setTitle("🏆 Scoreboard")
-    .setDescription("**Current Standings**")
+    .setDescription(`**Current Standings**\n\n🔹 **NyanCat** — ${fullWidth(ny)}\n🔸 **Bocchi** — ${fullWidth(bo)}`)
     .addFields(
-      { name: "😼 NyanCat", value: `**${scoreboard.nyancat || 0}**`, inline: true },
-      { name: "🥈 Bocchi", value: `**${scoreboard.bocchi || 0}**`, inline: true }
+      { name: "😼 NyanCat", value: nyValue, inline: true },
+      { name: "🥈 Bocchi", value: boValue, inline: true }
     )
     .setColor(0x2f3136)
+    .setFooter({ text: `Big view — updated ${new Date().toLocaleString()}` })
     .setTimestamp();
 }
 
