@@ -341,8 +341,8 @@ function createScoreboardEmbed() {
     .setTitle('🏆 SCOREBOARD')
     .setDescription(`**Current Standings**\n\n\n\n`)
     .addFields(
-      { name: "😼 NyanCat", value: nyValue, inline: true },
-      { name: "🥈 Bocchi", value: boValue, inline: true }
+      { name: "😼 NyanCats", value: nyValue, inline: true },
+      { name: "🎩 The Butler Cafe", value: boValue, inline: true }
     )
     .setColor(0x2f3136)
     .setFooter({ text: `Big view — updated ${new Date().toLocaleString()}` })
