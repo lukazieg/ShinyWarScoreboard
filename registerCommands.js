@@ -18,27 +18,13 @@ const commands = [
 
 const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 
-async function registerGuildCommands(clientId, guildId) {
-  if (!clientId || !guildId) throw new Error('CLIENT_ID and GUILD_ID are required');
-  return rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: commands });
-}
-
-async function registerGlobalCommands(clientId) {
-  if (!clientId) throw new Error('CLIENT_ID is required');
-  return rest.put(Routes.applicationCommands(clientId), { body: commands });
-}
-
-module.exports = { commands, registerGuildCommands, registerGlobalCommands };
-
-// If executed directly (node registerCommands.js), register for env GUILD_ID
-if (require.main === module) {
-  (async () => {
-    try {
-      await registerGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID);
-      console.log("Slash command registered");
-    } catch (err) {
-      console.error("Failed to register commands:", err);
-      process.exit(1);
-    }
-  })();
-}
+(async () => {
+  await rest.put(
+    Routes.applicationGuildCommands(
+    process.env.CLIENT_ID,
+    process.env.GUILD_ID
+    ),
+    { body: commands }
+  );
+  console.log("Slash command registered");
+})();
