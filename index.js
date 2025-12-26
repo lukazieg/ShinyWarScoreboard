@@ -14,6 +14,7 @@ const {
 
 const fs = require("fs");
 require("dotenv").config();
+const { registerGuildCommands } = require('./registerCommands');
 
 const express = require('express');
 const app = express();
@@ -283,6 +284,33 @@ client.on("interactionCreate", async interaction => {
 
 client.once("ready", async () => {
   console.log(`Logged in as ${client.user.tag}`);
+
+  // Register commands for all guilds the bot is already in (non-blocking, batched)
+  try {
+    const guildIds = client.guilds.cache.map(g => g.id);
+    if (guildIds.length) {
+      Promise.allSettled(guildIds.map(id => registerGuildCommands(process.env.CLIENT_ID, id)))
+        .then(results => {
+          results.forEach((r, i) => {
+            if (r.status === 'fulfilled') console.log(`Registered commands for guild ${guildIds[i]}`);
+            else console.error(`Failed to register commands for guild ${guildIds[i]}`, r.reason);
+          });
+        })
+        .catch(err => console.error('Error during batch command registration:', err));
+    }
+  } catch (err) {
+    console.error('Failed to start guild command registration:', err);
+  }
+
+  // When joining a new guild, automatically register commands for that guild
+  client.on('guildCreate', async (guild) => {
+    try {
+      await registerGuildCommands(process.env.CLIENT_ID, guild.id);
+      console.log(`Registered commands for new guild ${guild.id}`);
+    } catch (err) {
+      console.error('Failed to register commands for new guild:', guild.id, err);
+    }
+  });
 
   const channel = await client.channels.fetch(process.env.SCOREBOARD_CHANNEL_ID);
   try {
