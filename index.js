@@ -111,8 +111,8 @@ client.on("interactionCreate", async interaction => {
         .setCustomId(`selectPoints|${teamValue}`)
         .setPlaceholder("Select points option")
         .addOptions([
-          { label: "5x Horde", value: "horde5", description: "counts as 1 point" },
-          { label: "3x Horde", value: "horde3", description: "counts as 2 points" },
+          { label: "5x Horde", value: "horde5", description: "counts as 2 point" },
+          { label: "3x Horde", value: "horde3", description: "counts as 3 points" },
           { label: "Single", value: "single", description: "counts as 6 points" },
           { label: "Fishing", value: "fishing", description: "counts as 4 points" },
           { label: "Feebas", value: "feebas", description: "counts as 5 points" },
@@ -154,12 +154,13 @@ client.on("interactionCreate", async interaction => {
       await interaction.showModal(modal);
 
     } else if (interaction.customId && interaction.customId.startsWith("selectPoints|")) {
+      
       // Instead of applying immediately, show a flags dialog and allow confirmation
       const teamValue = interaction.customId.split("|")[1];
       const label = teamValue === "nyancat" ? "NyanCat" : "Bocchi";
       const option = interaction.values[0];
 
-      const map = { horde5: 1, horde3: 2, single: 6, fishing: 4, feebas: 5, "safari failed": 1, "safari caught": 7, "honey tree": 8, "fossil": 10, "egg": 12, "egg alpha": 20, "wild alpha": 35, "legendary": 45 };
+      const map = { horde5: 2, horde3: 3, single: 6, fishing: 4, feebas: 5, "safari failed": 1, "safari caught": 7, "honey tree": 8, "fossil": 10, "egg": 12, "egg alpha": 20, "wild alpha": 35, "legendary": 45 };
       const readable = { horde5: "5x Horde", horde3: "3x Horde", single: "Single", fishing: "Fishing", feebas: "Feebas", "safari failed": "Safari Failed", "safari caught": "Safari Caught", "honey tree": "Honey Tree", "fossil": "Fossil", "egg": "Egg", "egg alpha": "Egg Alpha", "wild alpha": "Wild Alpha", "legendary": "Legendary" };
 
       const base = map[option] ?? 0;
